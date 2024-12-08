@@ -26,8 +26,9 @@ public class DuckDBSchema extends AbstractSchema<DuckDBGlobalState, DuckDBTable>
         INT, VARCHAR, BOOLEAN, FLOAT, DATE, TIMESTAMP, NULL;
 
         public static DuckDBDataType getRandomWithoutNull() {
+            // 从 DuckDBDataType 枚举中随机选择一个类型，但排除 NULL 类型
             DuckDBDataType dt;
-            do {
+            do {// 如果选中的是 NULL，则重新随机选择，直到选中的值不是 NULL
                 dt = Randomly.fromOptions(values());
             } while (dt == DuckDBDataType.NULL);
             return dt;
@@ -35,6 +36,7 @@ public class DuckDBSchema extends AbstractSchema<DuckDBGlobalState, DuckDBTable>
 
     }
 
+    //
     public static class DuckDBCompositeDataType {
 
         private final DuckDBDataType dataType;
@@ -58,74 +60,77 @@ public class DuckDBSchema extends AbstractSchema<DuckDBGlobalState, DuckDBTable>
         }
 
         public static DuckDBCompositeDataType getRandomWithoutNull() {
-            DuckDBDataType type = DuckDBDataType.getRandomWithoutNull();
-            int size = -1;
+            DuckDBDataType type = DuckDBDataType.getRandomWithoutNull();// 随机非NULL类型
+            int size = -1;// 这个size用来确定是哪种sql数据类型
             switch (type) {
-            case INT:
-                size = Randomly.fromOptions(1, 2, 4, 8);
-                break;
-            case FLOAT:
-                size = Randomly.fromOptions(4, 8);
-                break;
-            case BOOLEAN:
-            case VARCHAR:
-            case DATE:
-            case TIMESTAMP:
-                size = 0;
-                break;
-            default:
-                throw new AssertionError(type);
+                case INT:
+                    size = Randomly.fromOptions(1, 2, 4, 8);
+                    break;
+                case FLOAT:
+                    size = Randomly.fromOptions(4, 8);
+                    break;
+                // 下面的size大小都为0
+                case BOOLEAN:
+                case VARCHAR:
+                case DATE:
+                case TIMESTAMP:
+                    size = 0;
+                    break;
+                default:
+                    throw new AssertionError(type);
             }
 
             return new DuckDBCompositeDataType(type, size);
         }
 
         @Override
-        public String toString() {
+        public String toString() {// switch(private final DuckDBDataType dataType)
             switch (getPrimitiveDataType()) {
-            case INT:
-                switch (size) {
-                case 8:
-                    return Randomly.fromOptions("BIGINT", "INT8");
-                case 4:
-                    return Randomly.fromOptions("INTEGER", "INT", "INT4", "SIGNED");
-                case 2:
-                    return Randomly.fromOptions("SMALLINT", "INT2");
-                case 1:
-                    return Randomly.fromOptions("TINYINT", "INT1");
+                case INT:
+                    switch (size) {
+                        case 8:
+                            return Randomly.fromOptions("BIGINT", "INT8");
+                        case 4:
+                            return Randomly.fromOptions("INTEGER", "INT", "INT4", "SIGNED");
+                        case 2:
+                            return Randomly.fromOptions("SMALLINT", "INT2");
+                        case 1:
+                            return Randomly.fromOptions("TINYINT", "INT1");
+                        default:
+                            throw new AssertionError(size);
+                    }
+                case VARCHAR:
+                    return "VARCHAR";
+                case FLOAT:
+                    switch (size) {
+                        case 8:
+                            return Randomly.fromOptions("DOUBLE");
+                        case 4:
+                            return Randomly.fromOptions("REAL", "FLOAT4");
+                        default:
+                            throw new AssertionError(size);
+                    }
+                case BOOLEAN:
+                    return Randomly.fromOptions("BOOLEAN", "BOOL");
+                case TIMESTAMP:
+                    return Randomly.fromOptions("TIMESTAMP", "DATETIME");
+                case DATE:
+                    return Randomly.fromOptions("DATE");
+                case NULL:
+                    return Randomly.fromOptions("NULL");
                 default:
-                    throw new AssertionError(size);
-                }
-            case VARCHAR:
-                return "VARCHAR";
-            case FLOAT:
-                switch (size) {
-                case 8:
-                    return Randomly.fromOptions("DOUBLE");
-                case 4:
-                    return Randomly.fromOptions("REAL", "FLOAT4");
-                default:
-                    throw new AssertionError(size);
-                }
-            case BOOLEAN:
-                return Randomly.fromOptions("BOOLEAN", "BOOL");
-            case TIMESTAMP:
-                return Randomly.fromOptions("TIMESTAMP", "DATETIME");
-            case DATE:
-                return Randomly.fromOptions("DATE");
-            case NULL:
-                return Randomly.fromOptions("NULL");
-            default:
-                throw new AssertionError(getPrimitiveDataType());
+                    throw new AssertionError(getPrimitiveDataType());
             }
         }
 
     }
 
+    //
     public static class DuckDBColumn extends AbstractTableColumn<DuckDBTable, DuckDBCompositeDataType> {
 
-        private final boolean isPrimaryKey;
-        private final boolean isNullable;
+        private final boolean isPrimaryKey;// 主键
+        private final boolean isNullable;// 空值
+        // 构造函数
 
         public DuckDBColumn(String name, DuckDBCompositeDataType columnType, boolean isPrimaryKey, boolean isNullable) {
             super(name, null, columnType);
@@ -160,58 +165,59 @@ public class DuckDBSchema extends AbstractSchema<DuckDBGlobalState, DuckDBTable>
     }
 
     private static DuckDBCompositeDataType getColumnType(String typeString) {
-        DuckDBDataType primitiveType;
+        DuckDBDataType primitiveType; // 枚举类型
         int size = -1;
         if (typeString.startsWith("DECIMAL")) { // Ugly hack
             return new DuckDBCompositeDataType(DuckDBDataType.FLOAT, 8);
         }
         switch (typeString) {
-        case "INTEGER":
-            primitiveType = DuckDBDataType.INT;
-            size = 4;
-            break;
-        case "SMALLINT":
-            primitiveType = DuckDBDataType.INT;
-            size = 2;
-            break;
-        case "BIGINT":
-        case "HUGEINT": // TODO: 16-bit int
-            primitiveType = DuckDBDataType.INT;
-            size = 8;
-            break;
-        case "TINYINT":
-            primitiveType = DuckDBDataType.INT;
-            size = 1;
-            break;
-        case "VARCHAR":
-            primitiveType = DuckDBDataType.VARCHAR;
-            break;
-        case "FLOAT":
-            primitiveType = DuckDBDataType.FLOAT;
-            size = 4;
-            break;
-        case "DOUBLE":
-            primitiveType = DuckDBDataType.FLOAT;
-            size = 8;
-            break;
-        case "BOOLEAN":
-            primitiveType = DuckDBDataType.BOOLEAN;
-            break;
-        case "DATE":
-            primitiveType = DuckDBDataType.DATE;
-            break;
-        case "TIMESTAMP":
-            primitiveType = DuckDBDataType.TIMESTAMP;
-            break;
-        case "\"NULL\"":
-            primitiveType = DuckDBDataType.NULL;
-            break;
-        case "INTERVAL":
-            throw new IgnoreMeException();
-        // TODO: caused when a view contains a computation like ((TIMESTAMP '1970-01-05 11:26:57')-(TIMESTAMP
-        // '1969-12-29 06:50:27'))
-        default:
-            throw new AssertionError(typeString);
+            case "INTEGER":
+                primitiveType = DuckDBDataType.INT;
+                size = 4;
+                break;
+            case "SMALLINT":
+                primitiveType = DuckDBDataType.INT;
+                size = 2;
+                break;
+            case "BIGINT":
+            case "HUGEINT": // TODO: 16-bit int
+                primitiveType = DuckDBDataType.INT;
+                size = 8;
+                break;
+            case "TINYINT":
+                primitiveType = DuckDBDataType.INT;
+                size = 1;
+                break;
+            case "VARCHAR":
+                primitiveType = DuckDBDataType.VARCHAR;
+                break;
+            case "FLOAT":
+                primitiveType = DuckDBDataType.FLOAT;
+                size = 4;
+                break;
+            case "DOUBLE":
+                primitiveType = DuckDBDataType.FLOAT;
+                size = 8;
+                break;
+            case "BOOLEAN":
+                primitiveType = DuckDBDataType.BOOLEAN;
+                break;
+            case "DATE":
+                primitiveType = DuckDBDataType.DATE;
+                break;
+            case "TIMESTAMP":
+                primitiveType = DuckDBDataType.TIMESTAMP;
+                break;
+            case "\"NULL\"":
+                primitiveType = DuckDBDataType.NULL;
+                break;
+            case "INTERVAL":
+                throw new IgnoreMeException();
+            // TODO: caused when a view contains a computation like ((TIMESTAMP '1970-01-05
+            // 11:26:57')-(TIMESTAMP
+            // '1969-12-29 06:50:27'))
+            default:
+                throw new AssertionError(typeString);
         }
         return new DuckDBCompositeDataType(primitiveType, size);
     }

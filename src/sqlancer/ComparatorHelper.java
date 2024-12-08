@@ -20,10 +20,12 @@ public final class ComparatorHelper {
 
     public static boolean isEqualDouble(String first, String second) {
         try {
-            double val = Double.parseDouble(first);
-            double secVal = Double.parseDouble(second);
+            double val = Double.parseDouble(first);// 将第一个字符串 first 解析成一个 double 类型的值
+            double secVal = Double.parseDouble(second);// 将第二个字符串 second 解析成一个 double 类型的值
+            // 因为double有精度问题，所以不能直接使用==判断
             return equals(val, secVal);
         } catch (Exception e) {
+            // 如果在解析字符串为 double 时出现错误（如非数字字符），会抛出异常，进而进入 catch 块，最终返回 false
             return false;
         }
     }
@@ -131,7 +133,8 @@ public final class ComparatorHelper {
     public static void assumeResultSetsAreEqual(List<String> resultSet, List<String> secondResultSet,
             String originalQueryString, List<String> combinedString, SQLGlobalState<?, ?> state,
             UnaryOperator<String> canonicalizationRule) {
-        // Overloaded version of assumeResultSetsAreEqual that takes a canonicalization function which is applied to
+        // Overloaded version of assumeResultSetsAreEqual that takes a canonicalization
+        // function which is applied to
         // both result sets before their comparison.
         List<String> canonicalizedResultSet = resultSet.stream().map(canonicalizationRule).collect(Collectors.toList());
         List<String> canonicalizedSecondResultSet = secondResultSet.stream().map(canonicalizationRule)
@@ -183,11 +186,11 @@ public final class ComparatorHelper {
         }
 
         switch (value) {
-        case "-0.0":
-            return "0.0";
-        case "-0":
-            return "0";
-        default:
+            case "-0.0":
+                return "0.0";
+            case "-0":
+                return "0";
+            default:
         }
 
         return value;

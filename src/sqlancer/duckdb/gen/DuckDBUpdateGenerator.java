@@ -17,6 +17,7 @@ public final class DuckDBUpdateGenerator extends AbstractUpdateGenerator<DuckDBC
     private final DuckDBGlobalState globalState;
     private DuckDBExpressionGenerator gen;
 
+    // 构造函数：接收一个 DuckDBGlobalState 对象，并初始化 globalState 字段
     private DuckDBUpdateGenerator(DuckDBGlobalState globalState) {
         this.globalState = globalState;
     }
@@ -26,7 +27,7 @@ public final class DuckDBUpdateGenerator extends AbstractUpdateGenerator<DuckDBC
     }
 
     private SQLQueryAdapter generate() {
-        DuckDBTable table = globalState.getSchema().getRandomTable(t -> !t.isView());
+        DuckDBTable table = globalState.getSchema().getRandomTable(t -> !t.isView());// 从数据库模式中随机选择一个表
         List<DuckDBColumn> columns = table.getRandomNonEmptyColumnSubsetFilter(p -> !p.getName().equals("rowid"));
         gen = new DuckDBExpressionGenerator(globalState).setColumns(table.getColumns());
         sb.append("UPDATE ");

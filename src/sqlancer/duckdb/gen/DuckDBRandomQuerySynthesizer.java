@@ -15,11 +15,14 @@ import sqlancer.duckdb.ast.DuckDBSelect;
 import sqlancer.duckdb.ast.DuckDBTableReference;
 
 public final class DuckDBRandomQuerySynthesizer {
-
+    // 工具类（Utility Class）：DuckDB 随机查询合成
+    // 方法 generateSelect 是静态方法，意味着可以直接通过类名调用，而不需要实例化对象
     private DuckDBRandomQuerySynthesizer() {
     }
 
+    // 生成一个随机的 DuckDB SELECT 查询
     public static DuckDBSelect generateSelect(DuckDBGlobalState globalState, int nrColumns) {
+        // 1 取表
         DuckDBTables targetTables = globalState.getSchema().getRandomTableNonEmptyTables();
         DuckDBExpressionGenerator gen = new DuckDBExpressionGenerator(globalState)
                 .setColumns(targetTables.getColumns());

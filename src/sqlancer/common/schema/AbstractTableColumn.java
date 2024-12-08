@@ -2,9 +2,9 @@ package sqlancer.common.schema;
 
 public class AbstractTableColumn<T extends AbstractTable<?, ?, ?>, U> implements Comparable<AbstractTableColumn<T, U>> {
 
-    private final String name;
-    private final U type;
-    private T table;
+    private final String name; // 列名
+    private final U type; // 列的类型
+    private T table; // 表 T extends AbstractTable
 
     public AbstractTableColumn(String name, T table, U type) {
         this.name = name;
@@ -12,10 +12,12 @@ public class AbstractTableColumn<T extends AbstractTable<?, ?, ?>, U> implements
         this.type = type;
     }
 
+    // 返回列名
     public String getName() {
         return name;
     }
 
+    // 返回表名+列名
     public String getFullQualifiedName() {
         if (table == null) {
             return getName();

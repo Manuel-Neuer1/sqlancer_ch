@@ -17,11 +17,23 @@ import sqlancer.duckdb.test.DuckDBQueryPartitioningGroupByTester;
 import sqlancer.duckdb.test.DuckDBQueryPartitioningHavingTester;
 
 public enum DuckDBOracleFactory implements OracleFactory<DuckDBProvider.DuckDBGlobalState> {
+    /*
+     * 每个枚举常量都代表了一个特定类型的 Oracle：
+     * NOREC：没有记录（NoRECOracle）的 Oracle。
+     * HAVING：针对 HAVING 子句的测试（DuckDBQueryPartitioningHavingTester）。
+     * WHERE：针对 WHERE 子句的测试（TLPWhereOracle）。
+     * GROUP_BY：针对 GROUP BY 子句的测试（DuckDBQueryPartitioningGroupByTester）。
+     * AGGREGATE：针对聚合函数的测试（DuckDBQueryPartitioningAggregateTester）。
+     * DISTINCT：针对 DISTINCT 关键字的测试（DuckDBQueryPartitioningDistinctTester）。
+     * QUERY_PARTITIONING：一个综合的 Oracle，结合了多个子 Oracle。
+     */
     NOREC {
         @Override
         public TestOracle<DuckDBProvider.DuckDBGlobalState> create(DuckDBProvider.DuckDBGlobalState globalState)
                 throws SQLException {
+            // DuckDBExpressionGenerator：用于生成 DuckDB 表达式，这些表达式用于 SQL 查询中的条件和表达式
             DuckDBExpressionGenerator gen = new DuckDBExpressionGenerator(globalState);
+            // ExpectedErrors：用来指定在执行测试时期望出现的错误。这里设置了可能会出现的表达式错误和正则表达式匹配的错误类型。
             ExpectedErrors errors = ExpectedErrors.newErrors().with(DuckDBErrors.getExpressionErrors())
                     .withRegex(DuckDBErrors.getExpressionErrorsRegex())
                     .with("canceling statement due to statement timeout").build();

@@ -10,7 +10,19 @@ import sqlancer.DBMSSpecificOptions;
 
 @Parameters(commandDescription = "DuckDB")
 public class DuckDBOptions implements DBMSSpecificOptions<DuckDBOracleFactory> {
-
+    // 所有的类成员变量都由 @Parameter 注解标注，该注解表示这些变量是通过命令行参数传递的配置选项
+    /*
+     * 这个注解定义了一个命令行参数 --test-collate，其值是布尔类型，默认值是 true。
+     * testCollate：表示是否启用 COLLATE 测试
+     * 
+     * names 用于定义命令行参数的名称，可以是一个或多个（例如 --test-check）。这些名称将用作用户在命令行中输入的参数名。
+     * ***例如，names = "--test-check" 表示命令行上使用 --test-check 来指定这个参数。
+     * description 提供了对该命令行参数的简要描述，通常用于生成帮助信息（如 --help）。
+     * ***例如，description = "Allow generating CHECK constraints in tables"
+     * 描述了这个参数的作用，即允许在表中生成 CHECK 约束
+     * arity 定义了该参数值的个数。在这种情况下，arity = 1 表示这个参数需要接收一个值。如果你将其设置为大于1的值，表示该参数可以接受多个值
+     * ***arity = 1 意味着命令行参数后面必须有一个值（如布尔值 true 或 false）
+     */
     @Parameter(names = "--test-collate", arity = 1)
     public boolean testCollate = true;
 

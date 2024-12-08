@@ -8,4 +8,7 @@ public class DuckDBTableReference extends TableReferenceNode<DuckDBExpression, D
     public DuckDBTableReference(DuckDBSchema.DuckDBTable table) {
         super(table);
     }
+    // 在 SQL 查询中，每个表都会在 AST 中表示为一个节点
+    // SELECT * FROM my_table;
+    // 在这里，my_table 就是一个表引用，可以由 DuckDBTableReference 来表示
 }

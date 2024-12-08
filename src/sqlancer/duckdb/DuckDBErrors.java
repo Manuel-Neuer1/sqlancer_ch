@@ -6,14 +6,18 @@ import java.util.regex.Pattern;
 
 import sqlancer.common.query.ExpectedErrors;
 
+// DuckDBErrors 类是一个用于管理和获取与 DuckDB 数据库相关的错误信息的工具类
+// 定义了多个静态方法来收集 DuckDB 中常见的错误消息，并返回这些错误信息作为字符串或正则表达式的列表
 public final class DuckDBErrors {
 
     private DuckDBErrors() {
     }
 
     public static List<String> getExpressionErrors() {
+        // 创建一个String类型的动态数组 errors
         ArrayList<String> errors = new ArrayList<>();
 
+        // 使用add()方法从 errors 数组末尾添加
         errors.add("with non-constant precision is not supported");
         errors.add("Like pattern must not end with escape character");
         errors.add("Could not convert string");
@@ -67,8 +71,10 @@ public final class DuckDBErrors {
     }
 
     public static List<Pattern> getExpressionErrorsRegex() {
+        // Pattern 是 Java 中用于正则表达式匹配的类
         ArrayList<Pattern> errors = new ArrayList<>();
-
+        // Pattern.compile(String regex)：用于将给定的正则表达式字符串 regex 编译成一个 Pattern
+        // 对象，以便后续进行匹配操作
         errors.add(Pattern.compile("Binder Error: Cannot mix values of type .* and .* in BETWEEN clause"));
         errors.add(Pattern.compile("Binder Error: Cannot mix values of type .* and .* in CASE expression"));
         errors.add(Pattern.compile("Cannot mix values of type .* and .* in COALESCE operator"));

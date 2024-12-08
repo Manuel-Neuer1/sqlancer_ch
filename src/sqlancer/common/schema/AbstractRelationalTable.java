@@ -17,11 +17,15 @@ public class AbstractRelationalTable<C extends AbstractTableColumn<?, ?>, I exte
     @Override
     public long getNrRows(G globalState) {
         if (rowCount == NO_ROW_COUNT_AVAILABLE) {
+            // name 是继承 AbstractTable 的
             SQLQueryAdapter q = new SQLQueryAdapter("SELECT COUNT(*) FROM " + name);
+            // executeAndGet(G globalState, String... fills)
+            // 方法：执行查询，并返回结果集；fills为空，用Statement
             try (SQLancerResultSet query = q.executeAndGet(globalState)) {
                 if (query == null) {
                     throw new IgnoreMeException();
                 }
+                // query对象有个ResultSet的成员变量，调用ResultSet的next方法
                 query.next();
                 rowCount = query.getLong(1);
                 return rowCount;

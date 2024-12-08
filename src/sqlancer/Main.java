@@ -62,6 +62,8 @@ public final class Main {
         if (!LOG_DIRECTORY.exists()) {
             LOG_DIRECTORY.mkdir();
         }
+        System.out.println("Current working directory: " + System.getProperty("user.dir"));
+        // Current working directory: /home/lyuce/BugProject/sqlancer/target
     }
 
     private Main() {
@@ -111,7 +113,17 @@ public final class Main {
             }
             ensureExistsAndIsEmpty(dir, provider);
             loggerFile = new File(dir, databaseName + ".log");
-            logEachSelect = options.logEachSelect();
+            System.out.println(loggerFile.getAbsolutePath());
+            /*
+             * /home/lyuce/BugProject/sqlancer/target/logs/sqlite3/database0.log
+             * /home/lyuce/BugProject/sqlancer/target/logs/sqlite3/database1.log
+             * /home/lyuce/BugProject/sqlancer/target/logs/sqlite3/database2.log
+             * /home/lyuce/BugProject/sqlancer/target/logs/sqlite3/database3.log
+             */
+            if (!loggerFile.exists()) {
+                System.out.println("No this file!!!");
+            }
+            logEachSelect = options.logEachSelect(); // 默认返回为true
             if (logEachSelect) {
                 curFile = new File(dir, databaseName + "-cur.log");
             }
@@ -382,6 +394,11 @@ public final class Main {
 
     }
 
+    /*
+     * 
+     * public static void main() 入口
+     * 
+     */
     public static void main(String[] args) {
         System.exit(executeMain(args));
     }
@@ -561,6 +578,13 @@ public final class Main {
 
     }
 
+    /*
+     * String... args 是 Java 中的可变参数
+     * 它允许方法接受多个 String 参数，或者一个 String 数组
+     * 在 executeMain 方法中，这些参数代表从命令行传入的参数
+     * 例如输入： java -jar sqlancer-*.jar --num-threads 4 sqlite3 --oracle NoREC
+     * args = {"--num-threads", "4", "sqlite3", "--oracle", "NoREC"};
+     */
     public static int executeMain(String... args) throws AssertionError {
         List<DatabaseProvider<?, ?, ?>> providers = getDBMSProviders();
         Map<String, DBMSExecutorFactory<?, ?, ?>> nameToProvider = new HashMap<>();
@@ -582,8 +606,21 @@ public final class Main {
 
         Randomly.initialize(options);
         if (options.printProgressInformation()) {
-            startProgressMonitor();
+            // true 打印查询进度信息
+            startProgressMonitor();// 跟踪程序（设置定时任务，并且打印信息）
             if (options.printProgressSummary()) {
+                // java -jar sqlancer-*.jar --num-threads 4 --print-progress-summary true
+                // sqlite3 --oracle NoREC
+                // 然后CTRL+C 杀掉进程后就可以看到下面的输出：
+                /*
+                 * 例如：
+                 * Overall execution statistics
+                 * ============================
+                 * 199k queries
+                 * 4 databases
+                 * 409k successfully-executed statements
+                 * 23k unsuccessfuly-executed statements
+                 */
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 
                     @Override
@@ -608,10 +645,12 @@ public final class Main {
                 }));
             }
         }
-
+        // System.out.println("I am Here");
+        // Executors 类中的一个静态方法，用于创建一个固定大小的线程池。线程池的大小由参数 nThreads 指定，线程池中的线程数固定，不会动态调整。
+        // getNumberConcurrentThreads()： 默认是16，如果 --num-threads 4 这种制定就是4
         ExecutorService execService = Executors.newFixedThreadPool(options.getNumberConcurrentThreads());
         DBMSExecutorFactory<?, ?, ?> executorFactory = nameToProvider.get(jc.getParsedCommand());
-
+        // 请求进行数据库连接测试
         if (options.performConnectionTest()) {
             try {
                 executorFactory.getDBMSExecutor(options.getDatabasePrefix() + "connectiontest", new Randomly())
@@ -624,37 +663,47 @@ public final class Main {
             }
         }
         final AtomicBoolean someOneFails = new AtomicBoolean(false);
-
+        // getTotalNumberTries()：返回一个值totalNumberTries（默认100），该值指定发现多少个错误后停止测试
         for (int i = 0; i < options.getTotalNumberTries(); i++) {
-            final String databaseName = options.getDatabasePrefix() + i;
+            final String databaseName = options.getDatabasePrefix() + i;// "databasei"
             final long seed;
             if (options.getRandomSeed() == -1) {
+                // 如果没有显式指定随机种子（-1？）
+                // 通过当前的时间戳（System.currentTimeMillis()）加上循环变量 i 来生成一个种子值
                 seed = System.currentTimeMillis() + i;
             } else {
+                // 如果指定了 options.getRandomSeed()，则使用指定的种子加上循环的索引 i 来生成种子值
+                // 这样可以确保在指定种子的基础上，每次循环使用不同的种子。
                 seed = options.getRandomSeed() + i;
             }
+            // 通过 ExecutorService 创建并执行一个多线程任务
             execService.execute(new Runnable() {
 
                 @Override
                 public void run() {
+                    // 设置当前线程的名称为 databaseName，通常用于在日志中区分不同线程的执行
                     Thread.currentThread().setName(databaseName);
+                    // 参数databaseName传入的就是"databasei"
                     runThread(databaseName);
                 }
 
                 private void runThread(final String databaseName) {
                     Randomly r = new Randomly(seed);
                     try {
+                        // 通过getMaxGeneratedDatabases()方法获得maxGeneratedDatabases，默认为-1
                         int maxNrDbs = options.getMaxGeneratedDatabases();
-                        // run without a limit if maxNrDbs == -1
+                        // run without a limit if maxNrDbs == -1 如果maxNrDbs是-1，表示没有限制，即会无限制地进行操作while(1)
+                        // 如果有限制，则会根据 maxNrDbs 执行相应次数的数据库操作
                         for (int i = 0; i < maxNrDbs || maxNrDbs == -1; i++) {
                             Boolean continueRunning = run(options, execService, executorFactory, r, databaseName);
+                            // 如果为false，则说明有错误
                             if (!continueRunning) {
                                 someOneFails.set(true);
                                 break;
                             }
                         }
                     } finally {
-                        threadsShutdown.addAndGet(1);
+                        threadsShutdown.addAndGet(1);// 线程池中完成的任务数加一
                         if (threadsShutdown.get() == options.getTotalNumberTries()) {
                             execService.shutdown();
                         }
@@ -704,9 +753,13 @@ public final class Main {
     }
 
     /**
-     * To register a new provider, it is necessary to implement the DatabaseProvider interface and add an additional
-     * configuration file, see https://docs.oracle.com/javase/9/docs/api/java/util/ServiceLoader.html. Currently, we use
-     * an @AutoService annotation to create the configuration file automatically. This allows SQLancer to pick up
+     * To register a new provider, it is necessary to implement the DatabaseProvider
+     * interface and add an additional
+     * configuration file, see
+     * https://docs.oracle.com/javase/9/docs/api/java/util/ServiceLoader.html.
+     * Currently, we use
+     * an @AutoService annotation to create the configuration file automatically.
+     * This allows SQLancer to pick up
      * providers in other JARs on the classpath.
      *
      * @return The list of service providers on the classpath
@@ -751,16 +804,29 @@ public final class Main {
     }
 
     private static synchronized void startProgressMonitor() {
-        if (progressMonitorStarted) {
+        /*
+         * 打印信息如下：
+         * [2024/11/26 16:10:11] Executed 65308 queries (13051 queries/s; 0.80/s dbs,
+         * successful statements: 94%). Threads shut down: 0.
+         * [2024/11/26 16:10:16] Executed 191730 queries (25309 queries/s; 0.20/s dbs,
+         * successful statements: 94%). Threads shut down: 0.
+         * [2024/11/26 16:10:21] Executed 288294 queries (19312 queries/s; 0.00/s dbs,
+         * successful statements: 95%). Threads shut down: 0.
+         */
+        // 启动一个定时任务，用于定期输出程序的执行进度和性能数据
+        if (progressMonitorStarted) { // 如果进度监控已经启动，则直接返回
             /*
-             * it might be already started if, for example, the main method is called multiple times in a test (see
+             * it might be already started if, for example, the main method is called
+             * multiple times in a test (see
              * https://github.com/sqlancer/sqlancer/issues/90).
              */
             return;
         } else {
-            progressMonitorStarted = true;
+            progressMonitorStarted = true; //
         }
+        // 创建一个定时任务调度器，使用单线程池，保证定时任务按照顺序执行。
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        // 定时调度任务，每隔 5 秒钟执行一次。定时任务是一个匿名 Runnable 实现
         scheduler.scheduleAtFixedRate(new Runnable() {
 
             private long timeMillis = System.currentTimeMillis();
@@ -773,13 +839,19 @@ public final class Main {
 
             @Override
             public void run() {
+                // 计算自上次任务执行以来的时间 (elapsedTimeMillis)
                 long elapsedTimeMillis = System.currentTimeMillis() - timeMillis;
-                long currentNrQueries = nrQueries.get();
+                long currentNrQueries = nrQueries.get();// 获取当前查询数
+                // 计算这次周期内执行的查询数
                 long nrCurrentQueries = currentNrQueries - lastNrQueries;
+                // 计算查询吞吐量
                 double throughput = nrCurrentQueries / (elapsedTimeMillis / 1000d);
+                // 获取当前数据库数
                 long currentNrDbs = nrDatabases.get();
                 long nrCurrentDbs = currentNrDbs - lastNrDbs;
+                // 计算数据库吞吐量
                 double throughputDbs = nrCurrentDbs / (elapsedTimeMillis / 1000d);
+                // 计算成功的语句比例
                 long successfulStatementsRatio = (long) (100.0 * nrSuccessfulActions.get()
                         / (nrSuccessfulActions.get() + nrUnsuccessfulActions.get()));
                 DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");

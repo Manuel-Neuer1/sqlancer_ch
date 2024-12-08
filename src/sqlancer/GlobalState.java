@@ -7,16 +7,18 @@ import sqlancer.common.schema.AbstractTable;
 
 public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends AbstractSchema<?, ?>, C extends SQLancerDBConnection> {
 
-    protected C databaseConnection;
-    private Randomly r;
-    private MainOptions options;
-    private O dbmsSpecificOptions;
-    private S schema;
+    protected C databaseConnection;// 保存数据库连接实例
+    private Randomly r;// 随机数生成器
+    private MainOptions options; // 选项 --help 之类的
+    private O dbmsSpecificOptions;// 数据库管理系统特定的选项。
+    // 用途：存储与数据库特性相关的配置项，允许 SQLancer 针对不同的数据库管理系统定制行为
+    private S schema;// 数据库的模式（schema），描述当前数据库的结构，即数据库中表、列等结构的描述。
     private Main.StateLogger logger;
     private StateToReproduce state;
     private Main.QueryManager<C> manager;
-    private String databaseName;
+    private String databaseName; // 数据库的名称
 
+    // 用于设置和获取数据库连接
     public void setConnection(C con) {
         this.databaseConnection = con;
     }
@@ -25,6 +27,7 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
         return databaseConnection;
     }
 
+    // 用于设置和获取数据库管理系统特定的选项（比如 MySQL、PostgreSQL 的特定配置）
     @SuppressWarnings("unchecked")
     public void setDbmsSpecificOptions(Object dbmsSpecificOptions) {
         this.dbmsSpecificOptions = (O) dbmsSpecificOptions;
@@ -34,6 +37,7 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
         return dbmsSpecificOptions;
     }
 
+    // 用于设置和获取随机数生成器
     public void setRandomly(Randomly r) {
         this.r = r;
     }
@@ -82,14 +86,15 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
         this.databaseName = databaseName;
     }
 
+    // 用于执行查询的前置操作，例如记录查询执行时间、日志等
     private ExecutionTimer executePrologue(Query<?> q) throws Exception {
-        boolean logExecutionTime = getOptions().logExecutionTime();
+        boolean logExecutionTime = getOptions().logExecutionTime();// MainOptions类的logExecutionTime()方法返回true
         ExecutionTimer timer = null;
         if (logExecutionTime) {
             timer = new ExecutionTimer().start();
         }
         if (getOptions().printAllStatements()) {
-            System.out.println(q.getLogString());
+            System.out.println(q.getLogString());//// q.getLogString() 方法的作用是返回当前 SQL 查询的字符串表示形式
         }
         if (getOptions().logEachSelect()) {
             if (logExecutionTime) {

@@ -31,6 +31,14 @@ import sqlancer.duckdb.gen.DuckDBViewGenerator;
 
 @AutoService(DatabaseProvider.class)
 public class DuckDBProvider extends SQLProviderAdapter<DuckDBGlobalState, DuckDBOptions> {
+    /*
+     * 主要任务是：
+     * 创建 DuckDB 数据库。
+     * 定义一组操作（如 INSERT、DELETE 等），并随机执行这些操作。
+     * 提供操作映射逻辑，将数据库状态与操作结合生成 SQL 查询。
+     * 生成测试用的数据库结构。
+     * 清理临时数据库文件。
+     */
 
     public DuckDBProvider() {
         super(DuckDBGlobalState.class, DuckDBOptions.class);
@@ -38,8 +46,8 @@ public class DuckDBProvider extends SQLProviderAdapter<DuckDBGlobalState, DuckDB
 
     public enum Action implements AbstractAction<DuckDBGlobalState> {
 
-        INSERT(DuckDBInsertGenerator::getQuery), //
-        CREATE_INDEX(DuckDBIndexGenerator::getQuery), //
+        INSERT(DuckDBInsertGenerator::getQuery), // INSERT 使用 DuckDBInsertGenerator 生成插入操作的 SQL
+        CREATE_INDEX(DuckDBIndexGenerator::getQuery), // 使用 DuckDBIndexGenerator 生成创建索引的 SQL
         VACUUM((g) -> new SQLQueryAdapter("VACUUM;")), //
         ANALYZE((g) -> new SQLQueryAdapter("ANALYZE;")), //
         DELETE(DuckDBDeleteGenerator::generate), //
@@ -70,25 +78,25 @@ public class DuckDBProvider extends SQLProviderAdapter<DuckDBGlobalState, DuckDB
     private static int mapActions(DuckDBGlobalState globalState, Action a) {
         Randomly r = globalState.getRandomly();
         switch (a) {
-        case INSERT:
-            return r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
-        case CREATE_INDEX:
-            if (!globalState.getDbmsSpecificOptions().testIndexes) {
-                return 0;
-            }
-            // fall through
-        case UPDATE:
-            return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumUpdates + 1);
-        case VACUUM: // seems to be ignored
-        case ANALYZE: // seems to be ignored
-        case EXPLAIN:
-            return r.getInteger(0, 2);
-        case DELETE:
-            return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumDeletes + 1);
-        case CREATE_VIEW:
-            return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumViews + 1);
-        default:
-            throw new AssertionError(a);
+            case INSERT:
+                return r.getInteger(0, globalState.getOptions().getMaxNumberInserts());// 返回 [0, MaxNumberInserts) 范围内
+            case CREATE_INDEX:
+                if (!globalState.getDbmsSpecificOptions().testIndexes) {
+                    return 0;
+                }
+                // fall through
+            case UPDATE:
+                return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumUpdates + 1);
+            case VACUUM: // seems to be ignored
+            case ANALYZE: // seems to be ignored
+            case EXPLAIN:
+                return r.getInteger(0, 2);
+            case DELETE:
+                return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumDeletes + 1);
+            case CREATE_VIEW:
+                return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumViews + 1);
+            default:
+                throw new AssertionError(a);
         }
     }
 

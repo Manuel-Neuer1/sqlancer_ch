@@ -95,14 +95,22 @@ public abstract class AbstractTable<C extends AbstractTableColumn<?, ?>, I exten
         return isView;
     }
 
+    // 生成一个不重复的列名
     public String getFreeColumnName() {
         int i = 0;
         if (Randomly.getBooleanWithRatherLowProbability()) {
-            i = (int) Randomly.getNotCachedInteger(0, 100);
+            // 如果返回 true，则会生成一个介于 0 到 100 之间的随机整数作为 i 的值
+            i = (int) Randomly.getNotCachedInteger(0, 100);// 生成不在缓存中的整数的函数，范围从 0 到 100
         }
+        // 该循环会不断生成列名并检查是否已经存在，直到生成一个未被使用的列名为止
         do {
+            // 生成一个列名 c0, c1, c2 ...，i++ 表示每次生成一个新列名时，i 会自增
             String columnName = String.format("c%d", i++);
+            // columns 是一个包含所有列的集合 private final List<C> columns;
+            // noneMatch 方法会遍历这些列，检查是否有任何一列的名字与 columnName 匹配
             if (columns.stream().noneMatch(t -> t.getName().contentEquals(columnName))) {
+                // 如果没有找到任何匹配的列名（即 noneMatch 返回 true）
+                // 表示生成的列名是唯一的，可以返回该列名
                 return columnName;
             }
         } while (true);

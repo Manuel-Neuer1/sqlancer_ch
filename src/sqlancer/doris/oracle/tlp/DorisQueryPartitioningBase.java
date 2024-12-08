@@ -27,7 +27,7 @@ import sqlancer.doris.gen.DorisNewExpressionGenerator;
 public class DorisQueryPartitioningBase extends TernaryLogicPartitioningOracleBase<DorisExpression, DorisGlobalState>
         implements TestOracle<DorisGlobalState> {
 
-    DorisSchema s;
+    DorisSchema s; // Doris数据库的schema
     DorisTables targetTables;
     DorisNewExpressionGenerator gen;
     DorisSelect select;
